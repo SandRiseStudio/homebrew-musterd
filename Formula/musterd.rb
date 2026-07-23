@@ -17,24 +17,31 @@ class Musterd < Formula
   sha256 "7e96ff7184ca0eb1d8e2b038fc695b18988755e1c809c560e4b4dc073c846745"
   license "MIT"
 
-  depends_on "node"
+  # better-sqlite3 (via @musterd/server) needs a supported Node ABI — pin Node 22 (engines >=22).
+  depends_on "node@22"
 
   def install
-    # Avoid Homebrew's std_npm_args here:
-    # - it sets --min-release-age (blocks fresh @musterd/* publishes)
-    # - it sets --build-from-source (breaks better-sqlite3 when no compile toolchain matches)
-    # Install from the downloaded tarball with prebuilds allowed. Revisit before homebrew-core.
+    node22 = Formula["node@22"].opt_bin
+    ENV.prepend_path "PATH", node22
+
+    # Avoid Homebrew's std_npm_args (--min-release-age blocks fresh publishes; --build-from-source
+    # breaks better-sqlite3 when prebuilds exist). Use node@22 + allow prebuilds.
     system "npm", "install", "-ddd", "--global",
            "--cache=#{HOMEBREW_CACHE}/npm_cache",
            "--prefix=#{libexec}",
            "--min-release-age=0",
            cached_download
-    bin.install_symlink libexec.glob("bin/*")
+
+    # Shebang `env node` can pick Homebrew's latest node (26+); bind the bin to node@22.
+    (bin/"musterd").write <<~EOS
+      #!/bin/bash
+      exec "#{node22}/node" "#{libexec}/lib/node_modules/@musterd/cli/dist/bin.js" "$@"
+    EOS
   end
 
   def caveats
     <<~EOS
-      musterd requires Node >=22.
+      musterd runs on Node 22 (Homebrew node@22).
 
       Next:
         musterd init

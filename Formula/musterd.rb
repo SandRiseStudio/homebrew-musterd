@@ -20,7 +20,14 @@ class Musterd < Formula
   depends_on "node"
 
   def install
-    system "npm", "install", *std_npm_args
+    # std_npm_args sets npm's --min-release-age (supply-chain delay). Fresh @musterd/*
+    # publishes fail that check for hours/days; this tap opts out so brew tracks npm immediately.
+    # Revisit before homebrew-core.
+    system "npm", "install", "-ddd", "--global", "--build-from-source",
+           "--cache=#{HOMEBREW_CACHE}/npm_cache",
+           "--prefix=#{libexec}",
+           "--min-release-age=0",
+           cached_download
     bin.install_symlink libexec.glob("bin/*")
   end
 

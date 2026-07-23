@@ -20,10 +20,11 @@ class Musterd < Formula
   depends_on "node"
 
   def install
-    # std_npm_args sets npm's --min-release-age (supply-chain delay). Fresh @musterd/*
-    # publishes fail that check for hours/days; this tap opts out so brew tracks npm immediately.
-    # Revisit before homebrew-core.
-    system "npm", "install", "-ddd", "--global", "--build-from-source",
+    # Avoid Homebrew's std_npm_args here:
+    # - it sets --min-release-age (blocks fresh @musterd/* publishes)
+    # - it sets --build-from-source (breaks better-sqlite3 when no compile toolchain matches)
+    # Install from the downloaded tarball with prebuilds allowed. Revisit before homebrew-core.
+    system "npm", "install", "-ddd", "--global",
            "--cache=#{HOMEBREW_CACHE}/npm_cache",
            "--prefix=#{libexec}",
            "--min-release-age=0",
